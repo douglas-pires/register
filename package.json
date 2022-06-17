@@ -1,0 +1,17 @@
+{
+  "name": "ramq",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "tsc && node ./dist/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dayjs": "^1.11.3",
+    "taiko": "^1.3.4",
+    "typescript": "^4.7.3"
+  }
+}
