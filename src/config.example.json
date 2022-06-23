@@ -1,5 +1,10 @@
 {
   "full_name": "",
   "phone": "",
-  "email": ""
+  "email": "",
+  "telegram": {
+    "app_id": "",
+    "hash": "",
+    "chat_id": ""
+  }
 }

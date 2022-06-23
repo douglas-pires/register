@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+import { TelegramClient } from "messaging-api-telegram";
 import {
   click,
   goto,
@@ -19,6 +20,11 @@ import {
 
 import config from "./config.json";
 
+// get accessToken from telegram [@BotFather](https://telegram.me/BotFather)
+const client = new TelegramClient({
+  accessToken: `${config.telegram.app_id}:${config.telegram.hash}`,
+});
+
 dayjs.extend(utc);
 
 const today = dayjs().utcOffset(0).startOf("day").date();
@@ -31,8 +37,6 @@ const time_slots = Array.from({ length: (18 - 6) * 2 }, (_, i) => {
 
 async function tryToSchedule(): Promise<boolean> {
   for (const time_slot of time_slots) {
-    console.log("trying time slot: " + time_slot);
-
     try {
       await click(time_slot);
 
@@ -55,7 +59,7 @@ async function tryToSchedule(): Promise<boolean> {
 }
 
 async function main(): Promise<void> {
-  await openBrowser({ headless: false });
+  await openBrowser();
   await goto(
     "https://outlook.office365.com/owa/calendar/RAMQ_bureau_MTL@azqmar.onmicrosoft.com/bookings/"
   );
@@ -98,7 +102,13 @@ async function main(): Promise<void> {
   );
 
   if (await to(time_slots_no_availability_text).exists()) {
-    console.log("No availability on this date");
+    client.sendMessage(
+      config.telegram.chat_id,
+      `No availability on this date. Last checked: ${dayjs().format(
+        "YYYY-MM-DD HH:mm"
+      )}`
+    );
+
     await waitFor(60000);
     await closeBrowser();
 
@@ -108,7 +118,10 @@ async function main(): Promise<void> {
   const slot_selected = tryToSchedule();
 
   if (!slot_selected) {
-    console.log("No available time slot found");
+    client.sendMessage(
+      config.telegram.chat_id,
+      `No available time slot found: ${dayjs().format("YYYY-MM-DD HH:mm")}`
+    );
 
     return;
   }
@@ -116,6 +129,12 @@ async function main(): Promise<void> {
   await click('[type="submit"]');
 
   console.log("Booking successful");
+  client.sendMessage(
+    config.telegram.chat_id,
+    `Booking successful at ${dayjs().format(
+      "YYYY-MM-DD HH:mm"
+    )} in ${slot_selected}`
+  );
 
   await waitFor(60000);
 
@@ -124,4 +143,11 @@ async function main(): Promise<void> {
   process.exit(0);
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  client.sendMessage(
+    config.telegram.chat_id,
+    `Something went wrong with the server: ${error}`
+  );
+  client.sendMessage(config.telegram.chat_id, `Trying to restart...`);
+});
